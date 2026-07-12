@@ -95,6 +95,20 @@ def image(doc, path, caption):
     r.font.color.rgb = GREY
 
 
+def kv_table(doc, rows):
+    """Two-column label/value table (left column bold)."""
+    t = doc.add_table(rows=len(rows), cols=2)
+    t.style = "Light List Accent 1"
+    for i, (label, value) in enumerate(rows):
+        c0, c1 = t.rows[i].cells
+        r0 = c0.paragraphs[0].add_run(label)
+        r0.bold = True
+        r0.font.size = Pt(10.5)
+        r1 = c1.paragraphs[0].add_run(value)
+        r1.font.size = Pt(10.5)
+    doc.add_paragraph()
+
+
 def build():
     doc = Document()
     doc.styles["Normal"].font.name = "Calibri"
@@ -236,5 +250,85 @@ def build():
     print(f"Saved article -> {out}")
 
 
+def build_recruiter():
+    """A scannable, results-first case study aimed at recruiters and hiring managers."""
+    doc = Document()
+    doc.styles["Normal"].font.name = "Calibri"
+
+    h1(doc, "Hospital Quality Intelligence")
+    subtitle(doc, "Project Case Study — End-to-End Data Analytics & Machine Learning")
+    body(doc,
+         "An end-to-end system built on public CMS data for 5,800+ US hospitals: SQL "
+         "analysis → two explainable ML models → a five-year trend analysis → a "
+         "deployed, tested, CI-backed dashboard. Designed around a real decision: "
+         "which hospitals should limited oversight resources target, and why.")
+
+    kv_table(doc, [
+        ("Role", "Solo project — data engineering, ML modeling, and deployment"),
+        ("Data", "CMS Care Compare (public) · 3 datasets · 24 quarterly releases, 2021–2026"),
+        ("Core stack", "SQL Server (T-SQL), Python, pandas, scikit-learn, SHAP, XGBoost, "
+                       "Streamlit, pytest, GitHub Actions"),
+        ("Live demo", DEMO),
+        ("Source code", REPO),
+    ])
+
+    h2(doc, "Results at a glance")
+    bullet(doc, "75 SQL queries across 5 analytical perspectives on 5,830 hospitals")
+    bullet(doc, "Underperformer-triage classifier: ROC-AUC 0.90, 84% recall")
+    bullet(doc, "Patient-satisfaction regressor: R^2 0.44 (leakage-free, cross-validated)")
+    bullet(doc, "24 quarterly releases stitched into a longitudinal panel; 817 hospitals "
+                "flagged on a declining trajectory")
+    bullet(doc, "13 automated tests, CI on Python 3.10 & 3.11, and a publicly deployed app")
+
+    h2(doc, "Skills demonstrated")
+    kv_table(doc, [
+        ("Data Engineering", "Multi-source ETL; schema-drift handling across 5 years; "
+                             "encoding normalization; long→wide reshaping; 100k+ row panel"),
+        ("SQL", "Joins, CTEs, window functions (RANK/NTILE/LAG), views, composite scoring"),
+        ("Machine Learning", "Classification + regression; 5-fold cross-validation; "
+                             "baseline-anchored model selection; data-leakage prevention"),
+        ("Explainable AI", "SHAP feature attribution for stakeholder-facing 'why'"),
+        ("Software / MLOps", "pytest test suite; GitHub Actions CI; config-driven design; "
+                             "Streamlit Cloud deployment"),
+        ("Communication", "Interactive dashboard, professional documentation, and "
+                          "business-framed problem definition"),
+    ])
+
+    h2(doc, "What I built")
+    body(doc, "Phase 1 — SQL Analytics: 75 queries turning three messy CMS tables into "
+              "rankings, per-state leaders, and a national hospital scorecard.")
+    body(doc, "Phase 2 — Machine Learning: two Random Forest models (satisfaction "
+              "prediction + underperformer triage), selected via cross-validated "
+              "benchmarking and explained with SHAP. Deployed as a 3-tab Streamlit "
+              "dashboard: ranked audit list, hospital drill-down, and model card.")
+    body(doc, "Phase 3 — Longitudinal Pipeline: 24 real CMS quarterly releases "
+              "(2021–2026) assembled into a panel that flags hospitals on a sustained "
+              "downward trajectory — an early-warning tool, not just a snapshot.")
+
+    h2(doc, "Why it stands out")
+    bullet(doc, "Judgment over vanity metrics — identified and prevented data leakage, "
+                "choosing an honest 0.90 model over a fake 'perfect' one, enforced by a test.")
+    bullet(doc, "Real-world resilience — handled genuine messy government data: "
+                "multi-year schema changes and mixed file encodings, not a clean Kaggle CSV.")
+    bullet(doc, "Production mindset — tested, CI-verified, documented, and deployed live, "
+                "not a one-off notebook.")
+
+    image(doc, IMG / "national_trend.png",
+          "Real national quality trends, 2021–2026 — one output of the longitudinal pipeline.")
+
+    h2(doc, "Explore the work")
+    p = doc.add_paragraph()
+    p.add_run("Live demo: ").bold = True
+    p.add_run(DEMO)
+    p = doc.add_paragraph()
+    p.add_run("Code & documentation: ").bold = True
+    p.add_run(REPO)
+
+    out = OUT_DIR / "Hospital_Quality_Intelligence_Recruiter.docx"
+    doc.save(str(out))
+    print(f"Saved recruiter case study -> {out}")
+
+
 if __name__ == "__main__":
     build()
+    build_recruiter()
