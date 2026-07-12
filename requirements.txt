@@ -1,0 +1,6 @@
+# Root requirements — used by Streamlit Community Cloud to deploy ml/app.py.
+# The deployed dashboard only reads precomputed CSV/JSON outputs, so it needs
+# just these two packages. For the full ML pipeline (training, SHAP, tests),
+# use ml/requirements.txt instead.
+streamlit>=1.30
+pandas>=2.0

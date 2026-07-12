@@ -84,6 +84,8 @@ sql_phase2_level2/
 
 The SQL analysis answers *"what does the data say?"* This second phase turns it into a **decision-support product** that answers *"what should we do about it?"* — two models plus an interactive dashboard, living in [`ml/`](ml/).
 
+> **🚀 Live demo:** _<!-- paste your Streamlit Cloud URL here after deploying -->_ &nbsp;•&nbsp; **One-time deploy:** go to [share.streamlit.io](https://share.streamlit.io) → *New app* → pick this repo, branch `main`, main file `ml/app.py` → *Deploy*. Streamlit Cloud installs the root `requirements.txt` and serves the dashboard automatically on every push.
+
 ## Business problems it solves
 
 1. **Audit triage** *(regulator / health department)* — a ranked risk list so limited inspection resources go to the hospitals most likely to be underperforming.

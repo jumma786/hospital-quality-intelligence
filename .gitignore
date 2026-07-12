@@ -9,9 +9,9 @@ Thumbs.db
 .DS_Store
 *.log
 
-# ML artifacts — regenerable from ml/src/*.py (keep SHAP pngs + metrics.json for the README)
+# ML artifacts — the large trained models are regenerable from ml/src/train_models.py.
+# The small derived CSVs (scored_hospitals, hospital_features) ARE committed so the
+# Streamlit Cloud app has its data layer without the raw CSVs or the .joblib models.
 ml/outputs/*.joblib
-ml/outputs/hospital_features.csv
-ml/outputs/scored_hospitals.csv
 __pycache__/
 *.pyc

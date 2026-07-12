@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import pathlib
 
-import joblib
 import pandas as pd
 import streamlit as st
 
@@ -27,19 +26,16 @@ st.set_page_config(page_title="Hospital Quality Intelligence", layout="wide")
 
 @st.cache_data
 def load():
+    # The app reads precomputed model outputs (committed to the repo) so it
+    # deploys to Streamlit Cloud without needing the raw CSVs or the trained
+    # .joblib models. Regenerate these via ml/src/build_features.py + train_models.py.
     scored = pd.read_csv(OUT / "scored_hospitals.csv")
     feats = pd.read_csv(OUT / "hospital_features.csv")
     metrics = json.loads((OUT / "metrics.json").read_text())
     return scored, feats, metrics
 
 
-@st.cache_resource
-def load_models():
-    return joblib.load(OUT / "reg_model.joblib"), joblib.load(OUT / "clf_model.joblib")
-
-
 scored, feats, metrics = load()
-reg_bundle, clf_bundle = load_models()
 
 st.title("🏥 Hospital Quality Intelligence")
 st.caption(
