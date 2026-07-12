@@ -76,6 +76,63 @@ sql_phase2_level2/
 
 ---
 
+---
+
+# Part 2 — Hospital Quality Intelligence (Machine Learning)
+
+The SQL analysis answers *"what does the data say?"* This second phase turns it into a **decision-support product** that answers *"what should we do about it?"* — two models plus an interactive dashboard, living in [`ml/`](ml/).
+
+## Business problems it solves
+
+1. **Audit triage** *(regulator / health department)* — a ranked risk list so limited inspection resources go to the hospitals most likely to be underperforming.
+2. **Improvement targeting** *(hospital administrator)* — SHAP explanations of *which controllable factors* associate with lower patient satisfaction.
+3. **Benchmarking** *(insurer / payer)* — predicted-vs-actual performance to spot hospitals over/under-performing their peer profile.
+
+## The two models
+
+| Model | Task | Target | Test performance |
+|-------|------|--------|------------------|
+| **Patient-satisfaction model** | Regression (Random Forest) | Avg HCAHPS star rating | **R² = 0.44**, MAE = 0.47 stars |
+| **Underperformer flag** | Classification (Random Forest) | Low-rated / worse-than-average hospital | **ROC-AUC = 0.90**, recall = 0.84 |
+
+### ⚠️ Leakage discipline (the key design decision)
+The CMS overall star rating is *mechanically derived* from the mortality/safety/readmission measure counts. Predicting the rating from those counts would produce a fake "perfect" model. Instead, both models are trained on **structural + patient-experience + process features only** (hospital type, ownership, location, emergency services, survey engagement, timely-care scores). The result is a lower — but **honest and interpretable** — model whose findings you can actually trust.
+
+## Explainability (SHAP)
+
+| Drivers of patient satisfaction | Drivers of underperformer risk |
+|---|---|
+| ![Regression SHAP](ml/outputs/shap_regression.png) | ![Classification SHAP](ml/outputs/shap_classification.png) |
+
+## How to run the ML pipeline
+
+```bash
+cd ml
+pip install -r requirements.txt
+python src/build_features.py     # 3 CSVs -> one per-hospital feature table
+python src/train_models.py       # trains both models, SHAP plots, scored list
+streamlit run app.py             # interactive dashboard
+```
+
+The dashboard has three tabs: **Audit Triage** (ranked risk list by state), **Hospital Profile** (single-hospital drill-down), and **Model Card** (metrics + honest limitations).
+
+## Honest limitations
+- **Cross-sectional** data → associations, *not* causation; no forecasting claims.
+- **Hospital-level aggregates** (~5,400 rows) → classical ML is the right call, not deep learning.
+- Output is **decision-support for human reviewers**, not an automated verdict.
+
+## ML project structure
+```
+ml/
+├── src/build_features.py   # feature engineering (long→wide, cleaning, leakage guard)
+├── src/train_models.py     # trains both models + SHAP + scored hospital list
+├── app.py                  # Streamlit dashboard
+├── requirements.txt
+└── outputs/                # SHAP pngs + metrics.json committed; models/CSVs regenerated
+```
+
+---
+
 ## Data Source & Attribution
 
 Data courtesy of the **Centers for Medicare & Medicaid Services (CMS)**, *Hospital Care Compare*, published as public-domain U.S. government data at [data.cms.gov](https://data.cms.gov/provider-data/).

@@ -8,3 +8,10 @@ data/*.csv
 Thumbs.db
 .DS_Store
 *.log
+
+# ML artifacts — regenerable from ml/src/*.py (keep SHAP pngs + metrics.json for the README)
+ml/outputs/*.joblib
+ml/outputs/hospital_features.csv
+ml/outputs/scored_hospitals.csv
+__pycache__/
+*.pyc

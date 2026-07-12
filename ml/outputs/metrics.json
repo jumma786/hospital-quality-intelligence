@@ -1,0 +1,42 @@
+{
+  "regression": {
+    "target": "patient_star_avg",
+    "n_train": 2540,
+    "n_test": 636,
+    "r2": 0.439,
+    "mae_stars": 0.472
+  },
+  "classification": {
+    "target": "is_underperformer",
+    "n_train": 4345,
+    "n_test": 1087,
+    "roc_auc": 0.9,
+    "report": {
+      "0": {
+        "precision": 0.863063063063063,
+        "recall": 0.793046357615894,
+        "f1-score": 0.8265746333045729,
+        "support": 604.0
+      },
+      "1": {
+        "precision": 0.7650375939849624,
+        "recall": 0.8426501035196687,
+        "f1-score": 0.8019704433497536,
+        "support": 483.0
+      },
+      "accuracy": 0.8150873965041399,
+      "macro avg": {
+        "precision": 0.8140503285240127,
+        "recall": 0.8178482305677814,
+        "f1-score": 0.8142725383271633,
+        "support": 1087.0
+      },
+      "weighted avg": {
+        "precision": 0.8195062078977248,
+        "recall": 0.8150873965041399,
+        "f1-score": 0.8156419527634711,
+        "support": 1087.0
+      }
+    }
+  }
+}
