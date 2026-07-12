@@ -1,4 +1,4 @@
-[![CI](https://github.com/jumma786/sql_phase2_level2/actions/workflows/ci.yml/badge.svg)](https://github.com/jumma786/sql_phase2_level2/actions/workflows/ci.yml)
+[![CI](https://github.com/jumma786/hospital-quality-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/jumma786/hospital-quality-intelligence/actions/workflows/ci.yml)
 
 # Hospital Quality & Performance — SQL Analytics Capstone
 
@@ -52,7 +52,7 @@ The final query (**Q75**) unifies all three data sources into a single **nationa
 ## Repository Structure
 
 ```
-sql_phase2_level2/
+hospital-quality-intelligence/
 ├── SQL_Phase2_Project.sql        # The 75 analytical queries (main deliverable)
 ├── data/
 │   ├── setup_and_import.sql      # Creates the HospitalQuality DB + 3 tables
