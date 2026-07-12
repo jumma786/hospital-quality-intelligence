@@ -15,3 +15,9 @@ Thumbs.db
 ml/outputs/*.joblib
 __pycache__/
 *.pyc
+
+# Longitudinal pipeline: simulated snapshots + large regenerable panels are not
+# committed. The small watermarked demo chart + national_trends.csv are kept.
+data/snapshots/
+ml/outputs/hospital_panel.csv
+ml/outputs/hospital_trends.csv

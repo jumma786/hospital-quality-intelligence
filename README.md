@@ -129,35 +129,63 @@ python src/train_models.py       # trains both models, SHAP plots, scored list
 streamlit run app.py             # interactive dashboard
 ```
 
+The dashboard has three tabs: **Audit Triage** (ranked risk list by state), **Hospital Profile** (single-hospital drill-down), and **Model Card** (metrics + honest limitations).
+
+## Honest limitations
+- The **single-snapshot** models are cross-sectional → associations, *not* causation. (Part 3 adds the longitudinal layer that enables genuine trend analysis once real archives are supplied.)
+- **Hospital-level aggregates** (~5,400 rows) → classical ML is the right call, not deep learning.
+- Output is **decision-support for human reviewers**, not an automated verdict.
+
+---
+
+# Part 3 — Longitudinal / Time-Series Pipeline
+
+CMS publishes hospital data as periodic **archived snapshots**. This phase adds a pipeline that stacks multiple periods into one **panel** (one row per hospital per period) and turns it into an **early-warning system** — flagging hospitals on a sustained downward trajectory *before* they show up as low-rated.
+
+```bash
+# Option A — real data: drop CMS archived snapshots into data/snapshots/<period>/
+# Option B — demo: generate clearly-labeled SIMULATED history to exercise the pipeline
+python src/simulate_history.py --periods 6   # writes data/snapshots/SIM-*/  (gitignored)
+
+python src/build_panel.py       # stack snapshots -> panel + period-over-period deltas
+python src/trend_analysis.py    # per-hospital trajectory slopes + national trends + chart
+```
+
+**What it produces**
+- `hospital_panel.csv` — the longitudinal panel with `*_delta` columns (LAG-style period-over-period change per hospital).
+- `hospital_trends.csv` — per-hospital **satisfaction** and **risk** trajectory slopes, plus a `declining_trajectory` early-warning flag.
+- `national_trends.csv` + `national_trend.png` — national metric trends over time.
+
+> ### ⚠️ Honesty note on the demo data
+> I could not download CMS's historical archives for this build, so the pipeline is validated on **synthetic history** produced by `simulate_history.py` (random walks over the current snapshot). It is **clearly labeled as simulated** — folders are prefixed `SIM-`, console output warns, and the chart is watermarked. **To get genuine trends, drop the real CMS archived snapshots into `data/snapshots/` — no code changes needed.** This is the one piece that would move the project into true longitudinal/forecasting territory.
+>
+> ![National trend (simulated demo)](ml/outputs/national_trend.png)
+
 ## Testing & CI
 
-The cleaning logic and the leakage guard are covered by a `pytest` suite that runs on synthetic data (no raw CSVs needed), and **GitHub Actions runs it on every push** across Python 3.10 and 3.11:
+The cleaning logic, the leakage guard, and the time-series pipeline are covered by a `pytest` suite that runs on synthetic data (no raw CSVs needed), and **GitHub Actions runs it on every push** across Python 3.10 and 3.11:
 
 ```bash
 pytest ml/tests -v
 ```
 
-Tests assert, among other things, that missing-value tokens map to `NaN`, that the underperformer label logic is correct, and that **no leakage column can ever enter the feature matrix** — the kind of guarantee that keeps a model honest as the code changes.
+Tests assert that missing-value tokens map to `NaN`, that the underperformer label logic is correct, that **no leakage column can ever enter the feature matrix**, and that the panel builder computes correct period-over-period deltas — the kind of guarantees that keep results honest as the code changes.
 
-The dashboard has three tabs: **Audit Triage** (ranked risk list by state), **Hospital Profile** (single-hospital drill-down), and **Model Card** (metrics + honest limitations).
-
-## Honest limitations
-- **Cross-sectional** data → associations, *not* causation; no forecasting claims.
-- **Hospital-level aggregates** (~5,400 rows) → classical ML is the right call, not deep learning.
-- Output is **decision-support for human reviewers**, not an automated verdict.
-
-## ML project structure
+## Full ML project structure
 ```
 ml/
-├── src/config.py           # single source of truth: features, leakage rules, model roster
-├── src/build_features.py   # feature engineering (long→wide, cleaning, leakage guard)
-├── src/compare_models.py   # 5-fold CV benchmark vs. baselines -> leaderboard
-├── src/train_models.py     # trains both models + SHAP + scored hospital list
-├── app.py                  # Streamlit dashboard
-├── tests/                  # pytest: cleaning, label logic, leakage guard, pipeline smoke
+├── src/config.py            # single source of truth: features, leakage rules, model roster
+├── src/build_features.py    # feature engineering (long→wide, cleaning, leakage guard)
+├── src/compare_models.py    # 5-fold CV benchmark vs. baselines -> leaderboard
+├── src/train_models.py      # trains both models + SHAP + scored hospital list
+├── src/simulate_history.py  # ⚠️ demo-only synthetic history generator
+├── src/build_panel.py       # stack period snapshots -> longitudinal panel + deltas
+├── src/trend_analysis.py    # trajectory slopes, early-warning flags, national trends
+├── app.py                   # Streamlit dashboard
+├── tests/                   # pytest: cleaning, leakage guard, pipeline + time-series
 ├── requirements.txt
-└── outputs/                # SHAP pngs, metrics.json, leaderboard committed; models/CSVs regenerated
-.github/workflows/ci.yml    # runs the test suite on every push (Py 3.10 & 3.11)
+└── outputs/                 # committed: SHAP pngs, metrics.json, leaderboard, trend chart
+.github/workflows/ci.yml     # runs the test suite on every push (Py 3.10 & 3.11)
 ```
 
 ---

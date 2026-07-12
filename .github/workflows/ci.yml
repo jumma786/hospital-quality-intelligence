@@ -23,9 +23,10 @@ jobs:
           cache: pip
 
       - name: Install test dependencies
-        # Lightweight: the unit tests validate cleaning + the leakage guard and
-        # only need pandas/numpy/scikit-learn — not shap/streamlit or the raw CSVs.
-        run: pip install pandas numpy scikit-learn pytest
+        # Lightweight: the tests validate cleaning, the leakage guard, and the
+        # time-series pipeline — they need pandas/numpy/scikit-learn/matplotlib,
+        # not shap/streamlit or the raw CSVs.
+        run: pip install pandas numpy scikit-learn matplotlib pytest
 
       - name: Run test suite
         run: pytest ml/tests -v

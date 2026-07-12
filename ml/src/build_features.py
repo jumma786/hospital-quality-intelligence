@@ -34,10 +34,6 @@ DATA_DIR = pathlib.Path(__file__).resolve().parents[2] / "data"
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / "outputs"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-GEN_CSV = DATA_DIR / "Hospital_General_Information.csv"
-TEC_CSV = DATA_DIR / "Timely_and_Effective_Care-Hospital.csv"
-HCAHPS_CSV = DATA_DIR / "HCAHPS-Hospital.csv"
-
 MISSING_TOKENS = {"Not Available", "Not Applicable", "", "N/A", "NA", "*"}
 
 
@@ -48,8 +44,9 @@ def _to_num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(cleaned, errors="coerce")
 
 
-def load_general() -> pd.DataFrame:
-    df = pd.read_csv(GEN_CSV, dtype=str).rename(columns=lambda c: c.strip())
+def load_general(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
+    df = pd.read_csv(data_dir / "Hospital_General_Information.csv",
+                     dtype=str).rename(columns=lambda c: c.strip())
     out = pd.DataFrame(
         {
             "facility_id": df["Facility ID"].str.strip(),
@@ -69,9 +66,10 @@ def load_general() -> pd.DataFrame:
     return out.drop_duplicates("facility_id")
 
 
-def load_hcahps() -> pd.DataFrame:
+def load_hcahps(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
     """Pivot HCAHPS to one row/hospital. Target = mean patient star rating."""
-    df = pd.read_csv(HCAHPS_CSV, dtype=str).rename(columns=lambda c: c.strip())
+    df = pd.read_csv(data_dir / "HCAHPS-Hospital.csv",
+                     dtype=str).rename(columns=lambda c: c.strip())
     df["fid"] = df["Facility ID"].str.strip()
     df["star"] = _to_num(df["Patient Survey Star Rating"])
     df["resp_rate"] = _to_num(df["Survey Response Rate Percent"])
@@ -88,9 +86,10 @@ def load_hcahps() -> pd.DataFrame:
     return out
 
 
-def load_timely() -> pd.DataFrame:
+def load_timely(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
     """Average timely/effective-care score per hospital (0-100 process measures)."""
-    df = pd.read_csv(TEC_CSV, dtype=str).rename(columns=lambda c: c.strip())
+    df = pd.read_csv(data_dir / "Timely_and_Effective_Care-Hospital.csv",
+                     dtype=str).rename(columns=lambda c: c.strip())
     df["fid"] = df["Facility ID"].str.strip()
     df["score"] = _to_num(df["Score"])
     # keep only 0-100 style process scores to avoid mixing minute-based measures
@@ -103,10 +102,12 @@ def load_timely() -> pd.DataFrame:
     return out
 
 
-def build() -> pd.DataFrame:
-    gen = load_general()
-    hcahps = load_hcahps()
-    timely = load_timely()
+def assemble(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
+    """Merge the three sources into one per-hospital feature frame + targets.
+    Reusable for a single snapshot OR one period of the longitudinal panel."""
+    gen = load_general(data_dir)
+    hcahps = load_hcahps(data_dir)
+    timely = load_timely(data_dir)
 
     df = gen.merge(hcahps, on="facility_id", how="left").merge(
         timely, on="facility_id", how="left"
@@ -119,7 +120,11 @@ def build() -> pd.DataFrame:
     df["composite_risk_score"] = worse_total
     # "Underperformer" = low overall rating (1-2 stars) OR any worse-than-avg measure
     df["is_underperformer"] = underperformer_flag(df["overall_rating"], worse_total)
+    return df
 
+
+def build() -> pd.DataFrame:
+    df = assemble(DATA_DIR)
     df.to_csv(OUT_DIR / "hospital_features.csv", index=False)
     return df
 
