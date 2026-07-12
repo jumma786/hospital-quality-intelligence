@@ -37,6 +37,18 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 MISSING_TOKENS = {"Not Available", "Not Applicable", "", "N/A", "NA", "*"}
 
 
+def _read_csv(path: pathlib.Path) -> pd.DataFrame:
+    """Read a CMS CSV as strings, tolerant of encoding drift across years.
+    Newer releases are UTF-8; older ones (≤2023) are Windows-1252/latin-1."""
+    for enc in ("utf-8-sig", "latin-1"):
+        try:
+            df = pd.read_csv(path, dtype=str, encoding=enc)
+            break
+        except UnicodeDecodeError:
+            continue
+    return df.rename(columns=lambda c: c.strip())
+
+
 def _to_num(series: pd.Series) -> pd.Series:
     """Coerce a CMS text column to numeric, mapping missing tokens to NaN."""
     cleaned = series.astype(str).str.strip()
@@ -44,23 +56,39 @@ def _to_num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(cleaned, errors="coerce")
 
 
+def _pick(df: pd.DataFrame, *names) -> pd.Series | None:
+    """First matching column across CMS schema versions (columns get renamed over years)."""
+    for n in names:
+        if n in df.columns:
+            return df[n]
+    return None
+
+
+def _pick_num(df: pd.DataFrame, *names) -> pd.Series:
+    """Numeric version of a possibly-absent column; all-NaN if none of the names exist.
+    Older CMS schemas (≤2021) lack the numeric worse-measure counts entirely."""
+    s = _pick(df, *names)
+    return _to_num(s) if s is not None else pd.Series(np.nan, index=df.index)
+
+
 def load_general(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
-    df = pd.read_csv(data_dir / "Hospital_General_Information.csv",
-                     dtype=str).rename(columns=lambda c: c.strip())
+    df = _read_csv(data_dir / "Hospital_General_Information.csv")
+    county = _pick(df, "County/Parish", "County Name")
     out = pd.DataFrame(
         {
             "facility_id": df["Facility ID"].str.strip(),
             "facility_name": df["Facility Name"].str.strip(),
             "state": df["State"].str.strip(),
-            "county": df["County/Parish"].str.strip(),
+            "county": county.str.strip() if county is not None else "",
             "hospital_type": df["Hospital Type"].str.strip(),
             "hospital_ownership": df["Hospital Ownership"].str.strip(),
             "emergency_services": (df["Emergency Services"].str.strip() == "Yes").astype(int),
             "overall_rating": _to_num(df["Hospital overall rating"]),
-            # kept ONLY for target engineering (leakage-prone) -> dropped from X later
-            "_mort_worse": _to_num(df["Count of MORT Measures Worse"]),
-            "_safety_worse": _to_num(df["Count of Safety Measures Worse"]),
-            "_readm_worse": _to_num(df["Count of READM Measures Worse"]),
+            # kept ONLY for target engineering (leakage-prone) -> dropped from X later.
+            # Absent in older schemas -> all-NaN, handled downstream in assemble().
+            "_mort_worse": _pick_num(df, "Count of MORT Measures Worse"),
+            "_safety_worse": _pick_num(df, "Count of Safety Measures Worse"),
+            "_readm_worse": _pick_num(df, "Count of READM Measures Worse"),
         }
     )
     return out.drop_duplicates("facility_id")
@@ -68,8 +96,7 @@ def load_general(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
 
 def load_hcahps(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
     """Pivot HCAHPS to one row/hospital. Target = mean patient star rating."""
-    df = pd.read_csv(data_dir / "HCAHPS-Hospital.csv",
-                     dtype=str).rename(columns=lambda c: c.strip())
+    df = _read_csv(data_dir / "HCAHPS-Hospital.csv")
     df["fid"] = df["Facility ID"].str.strip()
     df["star"] = _to_num(df["Patient Survey Star Rating"])
     df["resp_rate"] = _to_num(df["Survey Response Rate Percent"])
@@ -88,8 +115,7 @@ def load_hcahps(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
 
 def load_timely(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
     """Average timely/effective-care score per hospital (0-100 process measures)."""
-    df = pd.read_csv(data_dir / "Timely_and_Effective_Care-Hospital.csv",
-                     dtype=str).rename(columns=lambda c: c.strip())
+    df = _read_csv(data_dir / "Timely_and_Effective_Care-Hospital.csv")
     df["fid"] = df["Facility ID"].str.strip()
     df["score"] = _to_num(df["Score"])
     # keep only 0-100 style process scores to avoid mixing minute-based measures
@@ -114,10 +140,12 @@ def assemble(data_dir: pathlib.Path = DATA_DIR) -> pd.DataFrame:
     )
 
     # --- Target 2: underperformer flag (uses the leakage-prone worse-counts) ---
-    worse_total = (
-        df[["_mort_worse", "_safety_worse", "_readm_worse"]].fillna(0).sum(axis=1)
-    )
-    df["composite_risk_score"] = worse_total
+    worse = df[["_mort_worse", "_safety_worse", "_readm_worse"]]
+    worse_total = worse.fillna(0).sum(axis=1)
+    # Older CMS schemas (≤2022) lack the numeric worse-counts entirely -> record the
+    # composite risk as NaN (genuinely unknown) rather than a misleading 0.
+    has_counts = bool(worse.notna().to_numpy().any())
+    df["composite_risk_score"] = worse_total if has_counts else np.nan
     # "Underperformer" = low overall rating (1-2 stars) OR any worse-than-avg measure
     df["is_underperformer"] = underperformer_flag(df["overall_rating"], worse_total)
     return df

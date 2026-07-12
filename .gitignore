@@ -1,5 +1,6 @@
 # Large data files (exceed GitHub limits / not source)
 data/*.csv
+data/*.zip
 
 # Local tooling / config
 .claude/

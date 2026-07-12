@@ -40,6 +40,7 @@ The project is built in three phases that mirror how a real analytics product ma
 - 🤖 **Patient-satisfaction model** — Random Forest, **R² = 0.44**
 - 🎯 **Underperformer-triage model** — Random Forest, **ROC-AUC = 0.90** (84% recall)
 - 🔍 **SHAP explainability** + 5-fold cross-validated model selection
+- 📈 **24 quarterly CMS releases (2021–2026)** stitched into a longitudinal panel → **817 hospitals** flagged on a declining trajectory
 - ✅ **13 automated tests** + **GitHub Actions CI** enforcing a strict data-leakage guard
 
 ---
@@ -159,20 +160,25 @@ streamlit run app.py             # launch the dashboard
 
 CMS publishes hospital data as periodic **archived snapshots**. This phase stacks multiple periods into one **panel** (hospital × period) and turns it into an **early-warning system** — flagging hospitals on a sustained downward trajectory *before* they show up as low-rated.
 
+Built on **real CMS archives** spanning **24 quarterly releases (Jan 2021 → May 2026)** across **5,830 hospitals** — with **817 hospitals flagged** on a declining trajectory.
+
 ```bash
-# Real data: drop CMS archived snapshots into data/snapshots/<period>/   — OR —
-# Demo:      generate clearly-labeled SIMULATED history to exercise the pipeline
-python src/simulate_history.py --periods 6
+# Rebuild the real snapshots from CMS annual archive ZIPs in data/:
+python scripts/build_snapshots_from_archives.py   # 24 periods -> data/snapshots/<date>/
 
 python src/build_panel.py       # stack snapshots -> panel + period-over-period deltas
 python src/trend_analysis.py    # trajectory slopes + early-warning flags + national trends
 ```
 
-**Outputs:** `hospital_panel.csv` (LAG-style `*_delta` columns), `hospital_trends.csv` (per-hospital slopes + `declining_trajectory` flag), and `national_trends.csv` + a trend chart.
+**Outputs:** `hospital_panel.csv` (LAG-style `*_delta` columns), `hospital_trends.csv` (per-hospital slopes + `declining_trajectory` flag), and `national_trends.csv` + the trend chart below.
 
-> **⚠️ Honesty note.** Historical CMS archives were unavailable at build time, so the pipeline is validated on **synthetic history** (`simulate_history.py`, random walks over the current snapshot). It is **clearly labeled** — `SIM-` folder prefixes, console warnings, and a watermarked chart. **Real trends require only dropping the CMS archives into `data/snapshots/` — no code changes.** This is the one step that moves the project into true longitudinal/forecasting territory.
+![National quality metrics, 2021–2026](ml/outputs/national_trend.png)
+
+**What the real data shows:** timely-and-effective-care scores rose through 2023, then dropped sharply in late 2024 (a CMS measure-set change); patient satisfaction held roughly steady (~3.2★); survey response rates drifted down (25% → 23%); and overall ratings declined gradually before recovering in 2026.
+
+> **Real-world data engineering handled here:** the 2021–2022 archives use an *older CMS schema* (renamed columns; categorical quality fields instead of numeric measure counts) and mixed **Windows-1252 / UTF-8 encodings**. The loaders resolve column aliases, treat the risk counts as optional (recorded as `NaN`, not a misleading `0`, when absent), and auto-detect encoding — so all 24 heterogeneous releases assemble into one clean panel.
 >
-> ![National trend (simulated demo)](ml/outputs/national_trend.png)
+> *(`src/simulate_history.py` remains as a demo generator for anyone without the archives; it writes clearly-labeled `SIM-` snapshots.)*
 
 ---
 
@@ -210,6 +216,8 @@ hospital-quality-intelligence/
 │   ├── app.py                      # Streamlit dashboard
 │   ├── requirements.txt
 │   └── outputs/                    # SHAP plots, metrics, leaderboard, trend chart
+├── scripts/
+│   └── build_snapshots_from_archives.py  # unpack CMS annual archives -> 24 period snapshots
 ├── requirements.txt                # minimal deps for Streamlit Cloud deploy
 └── .github/workflows/ci.yml        # runs the test suite on every push
 ```
