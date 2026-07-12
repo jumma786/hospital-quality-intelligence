@@ -1,0 +1,10 @@
+# Large data files (exceed GitHub limits / not source)
+data/*.csv
+
+# Local tooling / config
+.claude/
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.log
