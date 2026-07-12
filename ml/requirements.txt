@@ -5,3 +5,5 @@ shap>=0.44
 matplotlib>=3.7
 streamlit>=1.30
 joblib>=1.3
+pytest>=7.0
+# optional: xgboost>=2.0  # auto-included in the model comparison if installed

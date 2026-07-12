@@ -25,18 +25,16 @@ Outputs (ml/outputs/):
 from __future__ import annotations
 import json
 import pathlib
+import sys
 import warnings
 
 import joblib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import shap
-from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
     classification_report,
     mean_absolute_error,
@@ -44,38 +42,15 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import config  # noqa: E402
+from config import LEAKAGE_COLS, feature_names, make_preprocessor  # noqa: E402
 
 warnings.filterwarnings("ignore")
 
 OUT = pathlib.Path(__file__).resolve().parents[1] / "outputs"
 FEATURES = OUT / "hospital_features.csv"
-
-CATEGORICAL = ["state", "hospital_type", "hospital_ownership"]
-# Numeric predictors that are NOT mechanically part of either label.
-NUMERIC = ["emergency_services", "survey_response_rate", "completed_surveys", "timely_care_avg"]
-
-# Columns never allowed as predictors (identifiers, targets, leakage sources).
-LEAKAGE_COLS = [
-    "facility_id", "facility_name", "county",
-    "overall_rating", "_mort_worse", "_safety_worse", "_readm_worse",
-    "composite_risk_score", "is_underperformer", "patient_star_avg",
-]
-
-
-def make_preprocessor(numeric_cols):
-    return ColumnTransformer(
-        transformers=[
-            ("cat", OneHotEncoder(handle_unknown="ignore", min_frequency=25), CATEGORICAL),
-            ("num", SimpleImputer(strategy="median"), numeric_cols),
-        ]
-    )
-
-
-def feature_names(preprocessor, numeric_cols):
-    ohe = preprocessor.named_transformers_["cat"]
-    return list(ohe.get_feature_names_out(CATEGORICAL)) + numeric_cols
 
 
 def shap_summary(model, preprocessor, X, numeric_cols, title, path):

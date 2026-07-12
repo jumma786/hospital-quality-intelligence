@@ -22,8 +22,13 @@ Outputs:
 
 from __future__ import annotations
 import pathlib
+import sys
+
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from config import underperformer_flag  # noqa: E402
 
 DATA_DIR = pathlib.Path(__file__).resolve().parents[2] / "data"
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / "outputs"
@@ -113,9 +118,7 @@ def build() -> pd.DataFrame:
     )
     df["composite_risk_score"] = worse_total
     # "Underperformer" = low overall rating (1-2 stars) OR any worse-than-avg measure
-    df["is_underperformer"] = (
-        (df["overall_rating"] <= 2) | (worse_total > 0)
-    ).astype(int)
+    df["is_underperformer"] = underperformer_flag(df["overall_rating"], worse_total)
 
     df.to_csv(OUT_DIR / "hospital_features.csv", index=False)
     return df

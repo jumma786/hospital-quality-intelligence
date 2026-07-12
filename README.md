@@ -1,3 +1,5 @@
+[![CI](https://github.com/jumma786/sql_phase2_level2/actions/workflows/ci.yml/badge.svg)](https://github.com/jumma786/sql_phase2_level2/actions/workflows/ci.yml)
+
 # Hospital Quality & Performance — SQL Analytics Capstone
 
 A SQL analytics project that explores **U.S. hospital quality and performance** using public data from the **CMS Care Compare** program. The project answers **75 business questions** across **5 analytical perspectives**, progressing from simple lookups to multi-table window functions, CTEs, and reusable views — framed around a real end consumer: *a state health department's hospital quality oversight official.*
@@ -96,7 +98,17 @@ The SQL analysis answers *"what does the data say?"* This second phase turns it 
 | **Underperformer flag** | Classification (Random Forest) | Low-rated / worse-than-average hospital | **ROC-AUC = 0.90**, recall = 0.84 |
 
 ### ⚠️ Leakage discipline (the key design decision)
-The CMS overall star rating is *mechanically derived* from the mortality/safety/readmission measure counts. Predicting the rating from those counts would produce a fake "perfect" model. Instead, both models are trained on **structural + patient-experience + process features only** (hospital type, ownership, location, emergency services, survey engagement, timely-care scores). The result is a lower — but **honest and interpretable** — model whose findings you can actually trust.
+The CMS overall star rating is *mechanically derived* from the mortality/safety/readmission measure counts. Predicting the rating from those counts would produce a fake "perfect" model. Instead, both models are trained on **structural + patient-experience + process features only** (hospital type, ownership, location, emergency services, survey engagement, timely-care scores). The result is a lower — but **honest and interpretable** — model whose findings you can actually trust. The forbidden columns live in one place (`config.LEAKAGE_COLS`) and a unit test asserts they never reach the feature matrix.
+
+### Model selection (5-fold cross-validated)
+Every candidate is benchmarked against a trivial baseline it must beat, with `python src/compare_models.py`:
+
+| Task | Metric | Baseline | Ridge / LogReg | HistGB | RandomForest | XGBoost |
+|------|--------|:--------:|:--------------:|:------:|:------------:|:-------:|
+| Satisfaction (regression) | R² | −0.07 | 0.36 | 0.39 | 0.39 | **0.40** |
+| Underperformer (classification) | ROC-AUC | 0.50 | 0.72 | 0.72 | **0.83** | 0.74 |
+
+*RandomForest is used in the shipped models for its top classification AUC and strong, stable regression score; XGBoost edges it slightly on regression R².*
 
 ## Explainability (SHAP)
 
@@ -110,9 +122,20 @@ The CMS overall star rating is *mechanically derived* from the mortality/safety/
 cd ml
 pip install -r requirements.txt
 python src/build_features.py     # 3 CSVs -> one per-hospital feature table
+python src/compare_models.py     # 5-fold CV leaderboard vs. baselines
 python src/train_models.py       # trains both models, SHAP plots, scored list
 streamlit run app.py             # interactive dashboard
 ```
+
+## Testing & CI
+
+The cleaning logic and the leakage guard are covered by a `pytest` suite that runs on synthetic data (no raw CSVs needed), and **GitHub Actions runs it on every push** across Python 3.10 and 3.11:
+
+```bash
+pytest ml/tests -v
+```
+
+Tests assert, among other things, that missing-value tokens map to `NaN`, that the underperformer label logic is correct, and that **no leakage column can ever enter the feature matrix** — the kind of guarantee that keeps a model honest as the code changes.
 
 The dashboard has three tabs: **Audit Triage** (ranked risk list by state), **Hospital Profile** (single-hospital drill-down), and **Model Card** (metrics + honest limitations).
 
@@ -124,11 +147,15 @@ The dashboard has three tabs: **Audit Triage** (ranked risk list by state), **Ho
 ## ML project structure
 ```
 ml/
+├── src/config.py           # single source of truth: features, leakage rules, model roster
 ├── src/build_features.py   # feature engineering (long→wide, cleaning, leakage guard)
+├── src/compare_models.py   # 5-fold CV benchmark vs. baselines -> leaderboard
 ├── src/train_models.py     # trains both models + SHAP + scored hospital list
 ├── app.py                  # Streamlit dashboard
+├── tests/                  # pytest: cleaning, label logic, leakage guard, pipeline smoke
 ├── requirements.txt
-└── outputs/                # SHAP pngs + metrics.json committed; models/CSVs regenerated
+└── outputs/                # SHAP pngs, metrics.json, leaderboard committed; models/CSVs regenerated
+.github/workflows/ci.yml    # runs the test suite on every push (Py 3.10 & 3.11)
 ```
 
 ---
