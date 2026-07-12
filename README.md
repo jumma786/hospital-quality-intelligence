@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <a href="https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/"><img src="https://img.shields.io/badge/Live_Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white" alt="Live Demo"></a>
   <a href="https://github.com/jumma786/hospital-quality-intelligence/actions/workflows/ci.yml"><img src="https://github.com/jumma786/hospital-quality-intelligence/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/SQL_Server-T--SQL-CC2927?logo=microsoftsqlserver&logoColor=white" alt="SQL Server">
@@ -15,7 +16,7 @@
 </p>
 
 <p align="center">
-  <strong>🚀 Live demo:</strong> <em>&lt;paste your Streamlit Cloud URL here&gt;</em>
+  <strong>🚀 Live demo:</strong> <a href="https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/"><strong>Try the interactive dashboard →</strong></a>
 </p>
 
 ---
@@ -238,9 +239,9 @@ python src/build_features.py && python src/train_models.py
 streamlit run app.py
 ```
 
-### Deploy the dashboard
+### Live dashboard
 
-[share.streamlit.io](https://share.streamlit.io) → **New app** → repo `jumma786/hospital-quality-intelligence`, branch `main`, main file `ml/app.py`. Streamlit Cloud installs the root `requirements.txt` and redeploys on every push.
+The app is deployed on Streamlit Community Cloud: **[hospital-quality-intelligence.streamlit.app](https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/)**. It redeploys automatically on every push to `main` (installs the root `requirements.txt`).
 
 ---
 
