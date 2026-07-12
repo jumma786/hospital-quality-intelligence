@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/scikit--learn-RF_+_SHAP-F7931E?logo=scikitlearn&logoColor=white" alt="scikit-learn">
   <img src="https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit">
   <img src="https://img.shields.io/badge/tests-13_passing-brightgreen" alt="tests">
+  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License: MIT">
 </p>
 
 <p align="center">
@@ -254,3 +255,9 @@ streamlit run app.py
 ## Data Source & Attribution
 
 Data courtesy of the **Centers for Medicare & Medicaid Services (CMS)**, *Hospital Care Compare* — public-domain U.S. government data at [data.cms.gov](https://data.cms.gov/provider-data/).
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE). The CMS source data is public domain and subject to CMS's own terms of use.
