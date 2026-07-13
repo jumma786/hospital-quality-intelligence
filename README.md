@@ -59,8 +59,12 @@ flowchart TD
         C["HCAHPS Survey"]
     end
 
-    SRC --> SQL["Phase 1: SQL Analytics<br/>75 queries and views"]
-    SRC --> FE["build_features.py<br/>clean, join, leakage guard"]
+    A --> FE["build_features.py<br/>clean, join, leakage guard"]
+    B --> FE
+    C --> FE
+    A --> SQL["Phase 1: SQL Analytics<br/>75 queries and views"]
+    B --> SQL
+    C --> SQL
     FE --> ML["Phase 2: RF models and SHAP<br/>cross-validated"]
     FE --> PANEL["Phase 3: 24-period panel<br/>trend and early-warning"]
     ML --> APP["Streamlit dashboard (live)"]
