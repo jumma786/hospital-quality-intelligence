@@ -16,7 +16,13 @@
 </p>
 
 <p align="center">
-  <strong>🚀 Live demo:</strong> <a href="https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/"><strong>Try the interactive dashboard →</strong></a>
+  <a href="https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/">
+    <img src="https://img.shields.io/badge/▶%20LAUNCH%20THE%20LIVE%20DASHBOARD-2563EB?style=for-the-badge&logo=streamlit&logoColor=white" alt="Launch the live dashboard" height="34">
+  </a>
+</p>
+
+<p align="center">
+  <sub><em>Hosted on Streamlit Community Cloud (free tier) — if it shows a sleep screen, click “Yes, get this app back up!” and it wakes in ~30 seconds.</em></sub>
 </p>
 
 ---
@@ -43,11 +49,31 @@ The project is built in three phases that mirror how a real analytics product ma
 - 📈 **24 quarterly CMS releases (2021–2026)** stitched into a longitudinal panel → **817 hospitals** flagged on a declining trajectory
 - ✅ **13 automated tests** + **GitHub Actions CI** enforcing a strict data-leakage guard
 
+### Architecture
+
+```mermaid
+flowchart LR
+    subgraph SRC["CMS Care Compare"]
+        A["General Info"]
+        B["Timely & Effective Care"]
+        C["HCAHPS Survey"]
+    end
+    A & B & C --> SQL["<b>Phase 1</b><br/>SQL Analytics<br/>75 queries · views"]
+    A & B & C --> FE["build_features.py<br/>clean · join · leakage guard"]
+    FE --> ML["<b>Phase 2</b><br/>RF models + SHAP<br/>cross-validated"]
+    FE --> PANEL["<b>Phase 3</b><br/>24-period panel<br/>trend + early-warning"]
+    ML --> APP["Streamlit dashboard<br/>(live)"]
+    PANEL --> APP
+    ML -. tested .-> CI["pytest + GitHub Actions CI"]
+    FE -. tested .-> CI
+```
+
 ---
 
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
+- [Dashboard Preview](#dashboard-preview)
 - [Phase 1 — SQL Analytics](#phase-1--sql-analytics)
 - [Phase 2 — Machine Learning](#phase-2--machine-learning)
 - [Phase 3 — Longitudinal Pipeline](#phase-3--longitudinal-pipeline)
@@ -67,6 +93,20 @@ The project is built in three phases that mirror how a real analytics product ma
 | **ML & Analysis** | Python, pandas, scikit-learn, SHAP, XGBoost |
 | **App** | Streamlit |
 | **Quality** | pytest, GitHub Actions (CI on Python 3.10 & 3.11) |
+
+---
+
+## Dashboard Preview
+
+**▶ [Launch the live app](https://hospital-quality-intelligence-puoehkx7u7po2laff5rv6y.streamlit.app/)** — a three-tab decision-support tool built for a hospital-quality oversight official:
+
+| Tab | What it does |
+|-----|--------------|
+| 🎯 **Audit Triage** | *"Where should oversight resources go first?"* — a ranked, filterable risk list. Pick a state and the top-N highest-risk hospitals surface instantly (model-scored risk, CMS rating, and patient stars side by side). |
+| 🔍 **Hospital Profile** | Single-hospital drill-down — predicted risk, satisfaction, national rank, and the structural profile behind the score. |
+| 📋 **Model Card** | Full transparency — metrics, the leakage-free training design, embedded SHAP driver plots, and honest limitations. |
+
+> _Tip: to embed a screenshot here, drop a PNG at `docs/assets/dashboard.png` and reference it — the app's Audit Triage tab makes the strongest hero image._
 
 ---
 
