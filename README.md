@@ -52,20 +52,21 @@ The project is built in three phases that mirror how a real analytics product ma
 ### Architecture
 
 ```mermaid
-flowchart LR
-    subgraph SRC["CMS Care Compare"]
+flowchart TD
+    subgraph SRC["CMS Care Compare data"]
         A["General Info"]
-        B["Timely & Effective Care"]
+        B["Timely and Effective Care"]
         C["HCAHPS Survey"]
     end
-    A & B & C --> SQL["<b>Phase 1</b><br/>SQL Analytics<br/>75 queries · views"]
-    A & B & C --> FE["build_features.py<br/>clean · join · leakage guard"]
-    FE --> ML["<b>Phase 2</b><br/>RF models + SHAP<br/>cross-validated"]
-    FE --> PANEL["<b>Phase 3</b><br/>24-period panel<br/>trend + early-warning"]
-    ML --> APP["Streamlit dashboard<br/>(live)"]
+
+    SRC --> SQL["Phase 1: SQL Analytics<br/>75 queries and views"]
+    SRC --> FE["build_features.py<br/>clean, join, leakage guard"]
+    FE --> ML["Phase 2: RF models and SHAP<br/>cross-validated"]
+    FE --> PANEL["Phase 3: 24-period panel<br/>trend and early-warning"]
+    ML --> APP["Streamlit dashboard (live)"]
     PANEL --> APP
-    ML -. tested .-> CI["pytest + GitHub Actions CI"]
-    FE -. tested .-> CI
+    ML -.->|tested| CI["pytest and GitHub Actions CI"]
+    FE -.->|tested| CI
 ```
 
 ---
